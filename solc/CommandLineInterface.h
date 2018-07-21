@@ -70,6 +70,9 @@ private:
 	void handleNatspec(bool _natspecDev, std::string const& _contract);
 	void handleGasEstimation(std::string const& _contract);
 	void handleFormal();
+	#ifdef NEBULAS_JS_CONVERSION
+	void handleSourceConversion(std::string const& _argStr);	//For now, if we output ast, we then start the s2s conversion
+	#endif
 
 	/// Fills @a m_sourceCodes initially and @a m_redirects.
 	bool readInputFilesAndConfigureRemappings();

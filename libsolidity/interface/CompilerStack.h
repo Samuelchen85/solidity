@@ -44,6 +44,8 @@
 #include <vector>
 #include <functional>
 
+#define NEBULAS_JS_CONVERSION = 1
+
 namespace dev
 {
 

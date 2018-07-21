@@ -44,6 +44,7 @@
 #include <libsolidity/interface/ABI.h>
 #include <libsolidity/interface/Natspec.h>
 #include <libsolidity/interface/GasEstimator.h>
+#include <libsolidity/analysis/JSTransfer.h>
 
 #include <libevmasm/Exceptions.h>
 
@@ -264,6 +265,21 @@ bool CompilerStack::analyze()
 			for (Source const* source: m_sourceOrder)
 				smtChecker.analyze(*source->ast);
 		}
+
+		/*
+		// Solidity to Javascript source to source tranformation
+		if(noErrors){
+			cout<<" =========== Start s2s tranfer ========= "<<endl;
+			JSTransfer jsTransfer(m_errorReporter);
+			string sourceFileName = "s2s.js"; // default file name
+			for(Source const* source: m_sourceOrder)
+				//jsTransfer.transfer(*source->ast, source);
+				jsTransfer.transfer(*source->ast, *source->scanner);
+			jsTransfer.writeSource(sourceFileName);
+			cout<<" =========== Finish s2s tranfer ========= "<<endl;
+		}
+		*/
+
 	}
 	catch(FatalError const&)
 	{
@@ -302,10 +318,12 @@ bool CompilerStack::compile()
 
 	map<ContractDefinition const*, eth::Assembly const*> compiledContracts;
 	for (Source const* source: m_sourceOrder)
-		for (ASTPointer<ASTNode> const& node: source->ast->nodes())
+		for (ASTPointer<ASTNode> const& node: source->ast->nodes()){
+			cout<<"found ast node: "<<node->id()<<endl;		
 			if (auto contract = dynamic_cast<ContractDefinition const*>(node.get()))
 				if (isRequestedContract(*contract))
 					compileContract(*contract, compiledContracts);
+		}
 	this->link();
 	m_stackState = CompilationSuccessful;
 	return true;
@@ -524,7 +542,13 @@ SourceUnit const& CompilerStack::ast(string const& _sourceName) const
 	if (m_stackState < ParsingSuccessful)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing was not successful."));
 
-	return *source(_sourceName).ast;
+	SourceUnit& res = *source(_sourceName).ast;
+
+	cout<<"The ast is constructed: "<<res.id()<<endl;
+
+	return res;
+
+//	return *source(_sourceName).ast;
 }
 
 ContractDefinition const& CompilerStack::contractDefinition(string const& _contractName) const

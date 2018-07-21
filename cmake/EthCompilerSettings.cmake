@@ -34,7 +34,8 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 	# to fix warnings as they arise, so they don't accumulate "to be fixed later".
 	add_compile_options(-Wall)
 	add_compile_options(-Wextra)
-	add_compile_options(-Werror)
+    #add_compile_options(-Werror)
+    add_compile_options(-g)
 
 	# Disable warnings about unknown pragmas (which is enabled by -Wall).  I assume we have external
 	# dependencies (probably Boost) which have some of these.   Whatever the case, we shouldn't be
@@ -44,10 +45,14 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 	add_compile_options(-Wno-unknown-pragmas)
 
 	# Configuration-specific compiler settings.
+    #set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g -DETH_DEBUG")
+    #set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+    #set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
+    #set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 	set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g -DETH_DEBUG")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+	set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -g")
+	set(CMAKE_CXX_FLAGS_RELEASE        "-O0 -g")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O0 -g")
 
 	# Additional GCC-specific compiler settings.
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -84,7 +89,7 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 			# When using -Werror with clang, it transforms "warning: argument unused during compilation" messages
 			# into errors, which makes sense.
 			# http://stackoverflow.com/questions/21617158/how-to-silence-unused-command-line-argument-error-with-clang-without-disabling-i
-			add_compile_options(-Qunused-arguments)
+            # add_compile_options(-Qunused-arguments)
 		endif()
 
 		if (EMSCRIPTEN)
@@ -93,7 +98,7 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 			# Leave only exported symbols as public and agressively remove others
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdata-sections -ffunction-sections -Wl,--gc-sections -fvisibility=hidden")
 			# Optimisation level
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 			# Re-enable exception catching (optimisations above -O1 disable it)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s DISABLE_EXCEPTION_CATCHING=0")
 			# Remove any code related to exit (such as atexit)

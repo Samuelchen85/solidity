@@ -619,6 +619,7 @@ void Conditional::accept(ASTConstVisitor& _visitor) const
 		m_condition->accept(_visitor);
 		m_trueExpression->accept(_visitor);
 		m_falseExpression->accept(_visitor);
+		
 	}
 	_visitor.endVisit(*this);
 }

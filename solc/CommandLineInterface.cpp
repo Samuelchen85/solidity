@@ -31,6 +31,7 @@
 #include <libsolidity/ast/ASTPrinter.h>
 #include <libsolidity/ast/ASTJsonConverter.h>
 #include <libsolidity/analysis/NameAndTypeResolver.h>
+#include <libsolidity/analysis/JSTransfer.h>
 #include <libsolidity/interface/Exceptions.h>
 #include <libsolidity/interface/CompilerStack.h>
 #include <libsolidity/interface/StandardCompiler.h>
@@ -835,7 +836,9 @@ bool CommandLineInterface::processInput()
 		unsigned runs = m_args[g_argOptimizeRuns].as<unsigned>();
 		m_compiler->setOptimiserSettings(optimize, runs);
 
+		cout<<"Start compiling stage >>>>>>>"<<endl;
 		bool successful = m_compiler->compile();
+		cout<<"Finish compiling stage >>>>>>>"<<endl;
 
 		for (auto const& error: m_compiler->errors())
 			formatter.printExceptionInformation(
@@ -965,6 +968,25 @@ void CommandLineInterface::handleCombinedJSON()
 		cout << json << endl;
 }
 
+#ifdef NEBULAS_JS_CONVERSION
+void CommandLineInterface::handleSourceConversion(string const& _argStr){
+	if(_argStr == g_argAst && m_args.count(_argStr)){
+		vector<ASTNode const*> asts;
+		for (auto const& sourceCode: m_sourceCodes)
+			asts.push_back(&m_compiler->ast(sourceCode.first));
+
+		for (auto const& sourceCode: m_sourceCodes){
+			cout<<" =========== Start s2s tranfer ========= "<<endl;
+			JSTransfer jsTransfer(sourceCode.second);
+			string sourceFileName = sourceCode.first + ".js";
+			jsTransfer.transfer(m_compiler->ast(sourceCode.first));
+			jsTransfer.writeSource(sourceFileName);
+			cout<<" =========== Finish s2s tranfer ========= "<<endl;
+		}
+	}
+}
+#endif
+
 void CommandLineInterface::handleAst(string const& _argStr)
 {
 	string title;
@@ -978,12 +1000,15 @@ void CommandLineInterface::handleAst(string const& _argStr)
 	else
 		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("Illegal argStr for AST"));
 
+	std::cout<<"<1>. Now is handling AST with arg str: "<<_argStr<<std::endl;
+
 	// do we need AST output?
 	if (m_args.count(_argStr))
 	{
 		vector<ASTNode const*> asts;
 		for (auto const& sourceCode: m_sourceCodes)
 			asts.push_back(&m_compiler->ast(sourceCode.first));
+
 		map<ASTNode const*, eth::GasMeter::GasConsumption> gasCosts;
 		// FIXME: shouldn't this be done for every contract?
 		if (m_compiler->runtimeAssemblyItems(m_compiler->lastContractName()))
@@ -1021,11 +1046,13 @@ void CommandLineInterface::handleAst(string const& _argStr)
 				cout << endl << "======= " << sourceCode.first << " =======" << endl;
 				if (_argStr == g_argAst)
 				{
+					cout<<"<2>. create printer instance"<<endl;
 					ASTPrinter printer(
 						m_compiler->ast(sourceCode.first),
 						sourceCode.second,
 						gasCosts
 					);
+					cout<<"<3>. >>>>Before displaying ast"<<endl;
 					printer.print(cout);
 				}
 				else
@@ -1197,6 +1224,10 @@ void CommandLineInterface::outputCompilationResults()
 	handleAst(g_argAst);
 	handleAst(g_argAstJson);
 	handleAst(g_argAstCompactJson);
+
+	#ifdef NEBULAS_JS_CONVERSION
+	handleSourceConversion(g_argAst);		// currently, the s2s conversion depends on ast flags
+	#endif
 
 	vector<string> contracts = m_compiler->contractNames();
 	for (string const& contract: contracts)
